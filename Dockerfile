@@ -25,6 +25,8 @@ RUN apt-get install -y \
     libxml2-dev \
     libxslt1-dev
 
+RUN pip install lxml
+
 # to get a decently recent version of swift3, you have to git clone...
 RUN cd /root; git clone https://github.com/stackforge/swift3.git
 RUN cd /root/swift3; python setup.py install
