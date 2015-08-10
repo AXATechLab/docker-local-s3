@@ -82,10 +82,15 @@ CONTAINER ID        IMAGE                         COMMAND                CREATED
 4941f8cd8b48        curtis/swift-onlyone:latest   /bin/sh -c /usr/loca   58 seconds ago      Up 57 seconds       0.0.0.0:12345->8080/tcp   hopeful_brattain
 ```
 
+[Pat Wood] Or you can simply run it with srv bind mounted onto a permanant location:
+
+```bash
+vagrant@host1:~$ docker run -d --name=s3.local -p 12345:8080 -v /vol/s3:/srv -t curtis/swift-onlyone
+
 We can now use the swift python client to access Swift using the Docker forwarded port, in this example port 12345.
 
 ```bash
-vagrant@host1:~$ swift -A http://127.0.0.1:12345/auth/v1.0 -U test:tester -K testing stat
+vagrant@host1:~$ swift -A http://127.0.0.1:8080/auth/v1.0 -U test:tester -K testing stat
        Account: AUTH_test
     Containers: 0
        Objects: 0
@@ -103,7 +108,18 @@ vagrant@host1:~$ swift -A http://127.0.0.1:12345/auth/v1.0 -U test:tester -K tes
 swift.txt
 ```
 
+
 That's it!
+
+## [Pat Wood] This S3 implementation has been tested with the following:
+
+* s3curl.pl (add the local endpoint to the endpoints array)
+* Amazon awscli "aws s3" command (need to set --endpoint-url in addition to region, access key, and secret key)
+* Amazon Ruby SDK (config: {endpoint: ENV['endpoint-DNS-name-or-IP'], ssl_verify_peer: false, force_path_style: true})
+* Amazon NodeJS SDK (config: {endpoint: 'http://endpoint-DNS-name-or-IP', sslEnabled: false, s3ForcePathStyle: true})
+* s3 NPM module
+* s3-streams NPM module
+* simples3 NPM module
 
 ## Todo
 
