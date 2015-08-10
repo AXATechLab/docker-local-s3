@@ -2,6 +2,8 @@
 
 First off, this is mostly a fork of [ccollicutt/docker-swift-onlyone](https://github.com/ccollicutt/docker-swift-onlyone) that I cleaned up a bit and added the swift3 Swift plugin to. Thanks so much to ccollicutt for their work! The README from that repo at the time I forked it is left in tact at the bottom of this README.
 
+[Pat Wood] and my fork of [mattlong/docker-local-s3](https://github.com/mattlong/docker-local-s3).
+
 ## Usage
 
 
@@ -14,7 +16,7 @@ First off, this is mostly a fork of [ccollicutt/docker-swift-onlyone](https://gi
 
 ---
 
-#Docker OpenStack Swift onlyone
+#Docker OpenStack Swift docker-local-s3
 
 This is a docker file that creates an OpenStack swift image which has only one replica and only one device. Why would this be useful? I think that Docker and OpenStack Swift go together like peas and carrots. Distributed files systems are a pain, so why not just use OpenStack Swift? Scaling is not as much of an issue with object storage. Many Docker containers, even on separate hosts, can use one OpenStack Swift container to persist files.
 
@@ -38,10 +40,10 @@ So first we create a data only container for /srv.
 vagrant@host1:~$ docker run -v /srv --name SWIFT_DATA busybox
 ```
 
-Now that we have a data container, we can use the "--volumes-from" option when creating the "onlyone" container. Note that in this case I've called the image built from this docker file "curtis/swift-onlyone".
+Now that we have a data container, we can use the "--volumes-from" option when creating the "onlyone" container. Note that in this case I've called the image built from this docker file "patrickhwood/swifts3".
 
 ```bash
-vagrant@host1:~$ ID=$(docker run -d -p 12345:8080 --volumes-from SWIFT_DATA -t curtis/swift-onlyone)
+vagrant@host1:~$ ID=$(docker run -d -p 12345:8080 --volumes-from SWIFT_DATA patrickhwood/swifts3)
 ```
 
 With that container running we can now check the logs.
@@ -79,13 +81,13 @@ At this point OpenStack Swift is running.
 ```bash
 vagrant@host1:~$ docker ps
 CONTAINER ID        IMAGE                         COMMAND                CREATED             STATUS              PORTS                     NAMES
-4941f8cd8b48        curtis/swift-onlyone:latest   /bin/sh -c /usr/loca   58 seconds ago      Up 57 seconds       0.0.0.0:12345->8080/tcp   hopeful_brattain
+4941f8cd8b48        patrickhwood/swifts3:latest   /bin/sh -c /usr/loca   58 seconds ago      Up 57 seconds       0.0.0.0:12345->8080/tcp   hopeful_brattain
 ```
 
 [Pat Wood] Or you can simply run it with srv bind mounted onto a permanant location:
 
 ```bash
-vagrant@host1:~$ docker run -d --name=s3.local -p 12345:8080 -v /vol/s3:/srv -t curtis/swift-onlyone
+vagrant@host1:~$ docker run -d --name=s3.local -p 12345:8080 -v /vol/s3:/srv patrickhwood/swifts3
 ```
 
 We can now use the swift python client to access Swift using the Docker forwarded port, in this example port 12345.
