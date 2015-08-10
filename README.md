@@ -86,6 +86,7 @@ CONTAINER ID        IMAGE                         COMMAND                CREATED
 
 ```bash
 vagrant@host1:~$ docker run -d --name=s3.local -p 12345:8080 -v /vol/s3:/srv -t curtis/swift-onlyone
+```
 
 We can now use the swift python client to access Swift using the Docker forwarded port, in this example port 12345.
 
