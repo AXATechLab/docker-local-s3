@@ -31,6 +31,9 @@ RUN pip install lxml
 # requests version with ubuntu 14.04 not comptabible with Swift3, upgrade
 RUN pip install requests --upgrade
 
+# for keystone auth, we need the keystone middleware
+RUN pip install keystonemiddleware
+
 # to get a decently recent version of swift3, you have to git clone...
 RUN cd /root; git clone https://github.com/stackforge/swift3.git
 RUN cd /root/swift3; python setup.py install
@@ -48,6 +51,7 @@ COPY files/container-server.conf /etc/swift/container-server.conf
 COPY files/proxy-server-keystone.conf /etc/swift/proxy-server.conf
 COPY files/swift.conf /etc/swift/swift.conf
 COPY files/startmain.sh /usr/local/bin/startmain.sh
+COPY files/container-reconciler.conf /etc/swift/container-reconciler.conf
 
 EXPOSE 8080
 CMD ["bash", "/usr/local/bin/startmain.sh"]
