@@ -66,15 +66,18 @@ fi
 
 # Start supervisord
 echo "Starting supervisord..."
-/usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+/usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf --logfile /var/log/supervisor/supervisord.log
 
 #
 # Tail the log file for "docker log $CONTAINER_ID"
 #
 
+
+
 # sleep waiting for rsyslog to come up under supervisord
 sleep 3
 
+
 echo "Starting to tail /var/log/syslog...(hit ctrl-c if you are starting the container in a bash shell)"
 
-tail -n 0 -f /var/log/syslog
+tail -n 0 -f /var/log/supervisor/supervisord.log
