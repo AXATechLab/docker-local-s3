@@ -6,6 +6,7 @@ RUN apt-get update; apt-get install -y software-properties-common
 RUN add-apt-repository -y cloud-archive:ocata
 
 RUN apt-get update; apt-get install -y \
+    nano \
     supervisor \
     memcached \
     swift \
