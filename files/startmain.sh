@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 
 #
 # Make the rings if they don't exist already
@@ -64,20 +64,22 @@ if [ ! -z "${SWIFT_SET_PASSWORDS}" ]; then
 	grep "user_test" /etc/swift/proxy-server.conf
 fi
 
-# Start supervisord
-echo "Starting supervisord..."
-/usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf --logfile /var/log/supervisor/supervisord.log
+# Some problems with syslog not active -> restart it
+service rsyslog restart
+
+# Start the swift services
+swift-init all start
+
 
 #
 # Tail the log file for "docker log $CONTAINER_ID"
 #
 
 
-
-# sleep waiting for rsyslog to come up under supervisord
+# sleep waiting for rsyslog to come up
 sleep 3
 
 
 echo "Starting to tail /var/log/syslog...(hit ctrl-c if you are starting the container in a bash shell)"
 
-tail -n 0 -f /var/log/supervisor/supervisord.log
+tail -n 0 -f /var/log/syslog

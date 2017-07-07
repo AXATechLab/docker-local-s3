@@ -7,6 +7,7 @@ RUN add-apt-repository -y cloud-archive:ocata
 
 RUN apt-get update; apt-get install -y \
     nano \
+    rsyslog \
     supervisor \
     memcached \
     swift \
@@ -39,9 +40,6 @@ RUN cd /root; git clone https://github.com/stackforge/swift3.git
 RUN cd /root/swift3; python setup.py install
 
 #RUN pip install python_swiftclient
-
-RUN mkdir -p /var/log/supervisor
-COPY files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 COPY files/dispersion.conf /etc/swift/dispersion.conf
 COPY files/rsyncd.conf /etc/rsyncd.conf
