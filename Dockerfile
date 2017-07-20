@@ -32,6 +32,9 @@ RUN pip install lxml
 # requests version with ubuntu 14.04 not comptabible with Swift3, upgrade
 RUN pip install requests --upgrade
 
+# for exif metadata extraction
+RUN pip install exifread
+
 # for keystone auth, we need the keystone middleware
 RUN pip install keystonemiddleware
 
