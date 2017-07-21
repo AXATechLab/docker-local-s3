@@ -45,7 +45,7 @@ class Exif2MetadataMiddleware(object):
             for k,v in tags.copy().iteritems():
                 if not k.startswith('Thumbnail'):
                     # todo: I need to sanitize k
-                    key = 'x-object-meta-imgmd-%s' % k.replace(' ', '-')
+                    key = 'x-object-meta-imgmeta-%s' % k.replace(' ', '-')
                     self.logger.info('key: %s, val: %s' % (key, v))
                     req.headers[key] = v.printable
 
