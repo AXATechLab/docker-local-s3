@@ -13,7 +13,7 @@ class Exif2MetadataMiddleware(object):
         self.app = app
         self.conf = conf
         self.logger = swift_utils.get_logger(conf, log_route='exif2metadata')
-	types = conf.get('content_types', 'image/jpeg,image/png')
+        types = conf.get('content_types', 'image/jpeg,image/png')
         self.content_types = [s.strip() for s in types.split(',')]
 
     def __call__(self, env, start_response):
