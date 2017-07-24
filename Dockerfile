@@ -32,8 +32,9 @@ RUN pip install lxml
 # requests version with ubuntu 14.04 not comptabible with Swift3, upgrade
 RUN pip install requests --upgrade
 
-# for exif metadata extraction
+# a couple of additional Python packages
 RUN pip install exifread
+RUN pip install Pillow
 
 # for keystone auth, we need the keystone middleware
 RUN pip install keystonemiddleware
@@ -53,6 +54,7 @@ COPY files/proxy-server-keystone.conf /etc/swift/proxy-server.conf
 COPY files/swift.conf /etc/swift/swift.conf
 COPY files/startmain.sh /usr/local/bin/startmain.sh
 COPY files/container-reconciler.conf /etc/swift/container-reconciler.conf
+COPY files/middleware/exif2metadata.py /usr/lib/python2.7/dist-packages/swift/common/middleware/exif2metadata.py
 
 EXPOSE 8080
 CMD ["bash", "/usr/local/bin/startmain.sh"]

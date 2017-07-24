@@ -30,12 +30,12 @@ class Exif2MetadataMiddleware(object):
             req.make_body_seekable()
 
             # env['wsgi.input'] implements a file interface
-            file = env['wsgi.input']
+            f = env['wsgi.input']
 
             #self.logger.debug('exif2metadata: dir on file: %s, class %s' % (','.join(dir(file)),file.__class__))
 
             # details=False: will not process the Thumbnail metadata types
-            tags = exifread.process_file(file, details=False)
+            tags = exifread.process_file(f, details=False)
 
             # currently we delete the thumbnail tag (too long)
             # maybe we want to use this later when we do the thumbnail generation
@@ -46,11 +46,11 @@ class Exif2MetadataMiddleware(object):
                 if not k.startswith('Thumbnail'):
                     # todo: I need to sanitize k
                     key = 'x-object-meta-imgmeta-%s' % k.replace(' ', '-')
-                    self.logger.info('key: %s, val: %s' % (key, v))
+                    #self.logger.info('key: %s, val: %s' % (key, v))
                     req.headers[key] = v.printable
 
             # reset reader to start
-            file.seek(0)
+            f.seek(0)
 
         return self.app(env, start_response)
 
