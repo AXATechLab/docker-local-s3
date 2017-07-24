@@ -37,9 +37,13 @@ class GenerateThumbMiddleware(object):
             size = (self.size, self.size)
             im = Image.open(f)
             im.thumbnail(size, Image.ANTIALIAS)
-            exif = im.info['exif']
+            exif = im.info['exif'] if 'exif' in im.info else None
             thumb_io = StringIO.StringIO()
-            im.save(thumb_io, format='JPEG', exif=exif)
+
+            if exif is not None:
+                im.save(thumb_io, format=im.format, exif=exif)
+            else:
+                im.save(thumb_io, format=im.format)
 
             # do subrequest
             new_env = req.environ.copy()
