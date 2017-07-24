@@ -55,6 +55,7 @@ COPY files/swift.conf /etc/swift/swift.conf
 COPY files/startmain.sh /usr/local/bin/startmain.sh
 COPY files/container-reconciler.conf /etc/swift/container-reconciler.conf
 COPY files/middleware/exif2metadata.py /usr/lib/python2.7/dist-packages/swift/common/middleware/exif2metadata.py
+COPY files/middleware/generate_thumb.py /usr/lib/python2.7/dist-packages/swift/common/middleware/generate_thumb.py
 
 EXPOSE 8080
 CMD ["bash", "/usr/local/bin/startmain.sh"]
