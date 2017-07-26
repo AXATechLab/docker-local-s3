@@ -39,6 +39,9 @@ RUN pip install Pillow
 # for keystone auth, we need the keystone middleware
 RUN pip install keystonemiddleware
 
+# client lib to talk to the elasticsearch server
+RUN pip install elasticsearch-dsl
+
 # to get a decently recent version of swift3, you have to git clone...
 RUN cd /root; git clone https://github.com/stackforge/swift3.git
 RUN cd /root/swift3; python setup.py install
@@ -56,6 +59,7 @@ COPY files/startmain.sh /usr/local/bin/startmain.sh
 COPY files/container-reconciler.conf /etc/swift/container-reconciler.conf
 COPY files/middleware/exif2metadata.py /usr/lib/python2.7/dist-packages/swift/common/middleware/exif2metadata.py
 COPY files/middleware/generate_thumb.py /usr/lib/python2.7/dist-packages/swift/common/middleware/generate_thumb.py
+COPY files/middleware/index_elastic.py /usr/lib/python2.7/dist-packages/swift/common/middleware/index_elastic.py
 
 EXPOSE 8080
 CMD ["bash", "/usr/local/bin/startmain.sh"]
