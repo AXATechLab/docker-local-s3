@@ -19,8 +19,12 @@ class File(DocType):
         index = 'files'
         doc_type = 'file'
 
+    @staticmethod
+    def get_index(bucket, path):
+        return bucket + ('_'.join(path.split('/')))
+
     def save(self, ** kwargs):
-        self.meta.id = self.bucket + ('_'.join(self.path.split('/')))
+        self.meta.id = File.get_index(self.bucket, self.path)
         return super(File, self).save(** kwargs)
 
 class IndexElasticMiddleware(object):
@@ -37,9 +41,30 @@ class IndexElasticMiddleware(object):
 	str = conf.get('endpoints', 'http://elastic:changeme@172.17.0.1:9200/')
         self.endpoints = [s.strip() for s in str.split(',')]
 
-    def index_file(self, env, req):
+    def remove_file(self, env, req):
         try:
-            self.logger.debug('indexelastic: start async: %s, req class: %s, input: %s, dir on wsgi.input: %s' % (env, req.__class__, input, dir(env['wsgi.input'])))
+            self.logger.debug('indexelastic: start async remove: %s' % (env))
+
+            path = env['PATH_INFO']
+            container, object = swift_utils.split_path(path, minsegs=1, maxsegs=2, rest_with_last=True)
+
+            connections.create_connection(hosts=self.endpoints)
+
+            File.init()
+
+            idx = File.get_index(container, '/' + object)
+            f = File.get(id=idx)
+            f.delete()
+
+            self.logger.debug('indexelastic: object with id %s deleted' % f.meta.id)
+
+        except Exception:
+            self.logger.exception('indexelastic: encountered exception while indexing in elastic search')
+
+
+    def add_file(self, env, req):
+        try:
+            self.logger.debug('indexelastic: start async add: %s' % (env))
 
             path = env['PATH_INFO']
             container, object = swift_utils.split_path(path, minsegs=1, maxsegs=2, rest_with_last=True)
@@ -55,12 +80,16 @@ class IndexElasticMiddleware(object):
             #f.user = env['HTTP_X_USER']
             f.mimetype = env['CONTENT_TYPE']
 
-            # todo add metadata
-            #f.metadata['abc'] = 'foo'
-            #f.metadata['def'] = 'bar2'
+            # adding meta data
+            metaprefix = 'X-Object-Meta-Imgmeta-'
+            metakeys = [k for k in req.headers if k.startswith(metaprefix)]
+            for k in metakeys:
+                #self.logger.debug('header %s -> %s' % (h, req.headers[h]))
+                k_short = k.replace(metaprefix, '')
+                f.metadata[k_short] = req.headers[k]
 
             f.save()
-            self.logger.debug('indexelastic: object with id %s indexed' % f.meta.id)
+            self.logger.debug('indexelastic: object with id %s added' % f.meta.id)
 
         except Exception:
             self.logger.exception('indexelastic: encountered exception while indexing in elastic search')
@@ -81,16 +110,15 @@ class IndexElasticMiddleware(object):
             self.logger.debug('indexelastic: image is a thumbnail, skipping')
             return self.app(env, start_response)
 
-        if object is not None and env['REQUEST_METHOD'] in ["PUT", "POST", "DELETE"]:
-
-            # currently I have a problem if executing the thumbnail generation code in the posthook, I cannot properly do a make_body_seekable
-            # in the posthook, getting a client disconnected error, maybe this is due to the body stream not being avail anymore in the hook.
+        if object is not None and env['REQUEST_METHOD'] in ["PUT", "POST"]:
             env['eventlet.posthooks'].append(
-                (self.index_file, (req,), {})
+                (self.add_file, (req,), {})
             )
 
-            # debug: direct call
-            #self.index_file(env,req)
+        elif object is not None and env['REQUEST_METHOD'] in ["DELETE"]:
+            env['eventlet.posthooks'].append(
+                (self.remove_file, (req,), {})
+            )
 
         return self.app(env, start_response)
 
