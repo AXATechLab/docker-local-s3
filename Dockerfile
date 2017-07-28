@@ -60,6 +60,7 @@ COPY files/container-reconciler.conf /etc/swift/container-reconciler.conf
 COPY files/middleware/exif2metadata.py /usr/lib/python2.7/dist-packages/swift/common/middleware/exif2metadata.py
 COPY files/middleware/generate_thumb.py /usr/lib/python2.7/dist-packages/swift/common/middleware/generate_thumb.py
 COPY files/middleware/index_elastic.py /usr/lib/python2.7/dist-packages/swift/common/middleware/index_elastic.py
+COPY files/middleware/search_elastic.py /usr/lib/python2.7/dist-packages/swift/common/middleware/search_elastic.py
 
 EXPOSE 8080
 CMD ["bash", "/usr/local/bin/startmain.sh"]
