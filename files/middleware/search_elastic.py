@@ -9,7 +9,8 @@ from elasticsearch_dsl.connections import connections
 
 import json
 import hashlib
-
+import urllib
+import urlparse
 
 class SearchElasticMiddleware(object):
     """Middleware which does a search in ElastcSearch and gives back the result.
@@ -24,7 +25,7 @@ class SearchElasticMiddleware(object):
         self.conf = conf
         self.logger = swift_utils.get_logger(conf, log_route='index_elastic')
 
-	str = conf.get('endpoints', 'http://elastic:changeme@172.17.0.1:9200/')
+        str = conf.get('endpoints', 'http://elastic:changeme@172.17.0.1:9200/')
         self.endpoints = [s.strip() for s in str.split(',')]
 
     def search(self, env, req, start_response):
@@ -37,36 +38,80 @@ class SearchElasticMiddleware(object):
             self.logger.debug('searchelastic: start search: %s' % (env))
 
             path = env['PATH_INFO']
-            container, object = swift_utils.split_path(path, minsegs=1, maxsegs=2, rest_with_last=True)
+            version, account, container, object = swift_utils.split_path(path, minsegs=2, maxsegs=4, rest_with_last=True)
 
-            if env['REQUEST_METHOD'] == 'PUT':
+            if env['REQUEST_METHOD'] == 'GET':
                 f = env['wsgi.input']
                 s = f.read()
+                md5 = compute_hash(s)
+
+                self.logger.debug('searchelastic: get cont %s, obj %s' % (container, object))
+
+                if not '?' in object:
+                    return Response(status=400,
+                                    body='The query string should be present',
+                                    headers={'ETag': md5, 'Content-Type': 'text/plain'}
+                                    )(env, start_response)
+
+                query = object.split('?')[-1]
+
+                if not query.startswith('q='):
+                    return Response(status=400,
+                                    body='The query variable should be present',
+                                    headers={'ETag': md5, 'Content-Type': 'text/plain'}
+                                    )(env, start_response)
+
+                self.logger.debug('searchelastic: query raw all is %s' % query)
+                q = query[len('q='):]
+                self.logger.debug('searchelastic: query raw right is %s' % q)
+
+                q = urllib.unquote(q).decode('utf8')
+                q = json.loads(q)
+
+                self.logger.debug('searchelastic: query is %s' % q)
+                self.logger.debug('searchelastic: endpoints %s' % self.endpoints)
+
+                client = Elasticsearch(self.endpoints)
+                response = client.search(
+                    index='files',
+                    body=q
+                )
+
+                self.logger.debug('searchelastic: send response')
+
+                return Response(status=200,
+                                body=json.dumps(response),
+                                headers={'ETag': md5, 'Content-Type': 'application/json'}
+                                )(env, start_response)
+
+            elif env['REQUEST_METHOD'] == 'PUT':
+                f = env['wsgi.input']
+                s = f.read()
+                md5 = compute_hash(s)
+
                 self.logger.debug('searchelastic: s is %s' % s)
                 q = json.loads(s)
 
                 self.logger.debug('searchelastic: query is %s' % q)
 
-                #connections.create_connection(hosts=self.endpoints)
-
-                #File.init()
-
-                #idx = File.get_index(container, '/' + object)
-                #f = File.get(id=idx)
-                #f.delete()
+                client = Elasticsearch(self.endpoints)
+                response = client.search(
+                    index='files',
+                    body=q
+                )
 
                 self.logger.debug('searchelastic: send response')
 
-                md5 = compute_hash(s)
-
                 return Response(status=201,
-                                body='ok',
-                                headers={'ETag': md5, 'Content-Type': 'text/plain'}
+                                body=json.dumps(response),
+                                headers={'ETag': md5, 'Content-Type': 'application/json'}
                                 )(env, start_response)
 
             elif env['REQUEST_METHOD'] == 'HEAD':
 
-                return Response(status=204,
+                status = 204 if object is None else 200
+                self.logger.debug('searchelastic: send response with status %d, object %s' % (status, object))
+                return Response(status=status,
                                 body="ok",
                                 content_type="text/plain")(env, start_response)
 
@@ -82,8 +127,8 @@ class SearchElasticMiddleware(object):
 
         req = Request(env)
 
-        self.logger.debug('searchelastic: meth %s, cont %s, obj %s, path %s' % (env['REQUEST_METHOD'], container, object, req.path))
-        if container == 'search' and env['REQUEST_METHOD'] in ["HEAD", "PUT"]:
+        self.logger.debug('searchelastic: meth %s, ver %s, account %s, cont %s, obj %s, path %s' % (env['REQUEST_METHOD'], version, account, container, object, path))
+        if container == 'search' and env['REQUEST_METHOD'] in ["HEAD", "PUT", "GET"]:
 
             return self.search(env, req, start_response)
 
