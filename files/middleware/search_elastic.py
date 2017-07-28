@@ -84,29 +84,6 @@ class SearchElasticMiddleware(object):
                                 headers={'ETag': md5, 'Content-Type': 'application/json'}
                                 )(env, start_response)
 
-            elif env['REQUEST_METHOD'] == 'PUT':
-                f = env['wsgi.input']
-                s = f.read()
-                md5 = compute_hash(s)
-
-                self.logger.debug('searchelastic: s is %s' % s)
-                q = json.loads(s)
-
-                self.logger.debug('searchelastic: query is %s' % q)
-
-                client = Elasticsearch(self.endpoints)
-                response = client.search(
-                    index='files',
-                    body=q
-                )
-
-                self.logger.debug('searchelastic: send response')
-
-                return Response(status=201,
-                                body=json.dumps(response),
-                                headers={'ETag': md5, 'Content-Type': 'application/json'}
-                                )(env, start_response)
-
             elif env['REQUEST_METHOD'] == 'HEAD':
 
                 status = 204 if object is None else 200
@@ -120,7 +97,6 @@ class SearchElasticMiddleware(object):
             self.logger.exception('searchelastic: encountered exception while searching in elastic search')
 
     def __call__(self, env, start_response):
-        content_type = env.get('CONTENT_TYPE', '')
 
         path = env['PATH_INFO']
         version, account, container, object = swift_utils.split_path(path, minsegs=2, maxsegs=4, rest_with_last=True)
@@ -128,7 +104,7 @@ class SearchElasticMiddleware(object):
         req = Request(env)
 
         self.logger.debug('searchelastic: meth %s, ver %s, account %s, cont %s, obj %s, path %s' % (env['REQUEST_METHOD'], version, account, container, object, path))
-        if container == 'search' and env['REQUEST_METHOD'] in ["HEAD", "PUT", "GET"]:
+        if container == 'search' and env['REQUEST_METHOD'] in ["HEAD", "GET"]:
 
             return self.search(env, req, start_response)
 
